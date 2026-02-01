@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from database import engine, SessionLocal
@@ -9,6 +10,13 @@ from schemas import GenrePreferenceRequest
 
 
 app = FastAPI(title="Novel Recommendation Backend")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # allow all for development
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)

@@ -48,3 +48,5 @@ backend/venv/
 backend/novel_app.db
 __pycache__/
 .env
+
+pubspec.lock

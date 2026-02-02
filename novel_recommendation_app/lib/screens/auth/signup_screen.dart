@@ -1,534 +1,14 @@
-// import 'package:flutter/material.dart';
-// import '../../widgets/custom_textfield.dart';
-// import '../../widgets/custom_button.dart';
-// import '../../services/api_service.dart';
-// import '../onboarding/genre_selection_screen.dart';
-// import 'dart:ui';
-
-// // ─── Decorative static mini-book ────────────────────────────────────────────
-// class _MiniBook extends StatelessWidget {
-//   final Color spineColor;
-//   final Color coverColor;
-//   final double width;
-//   final double height;
-//   final double rotation;
-
-//   const _MiniBook({
-//     required this.spineColor,
-//     required this.coverColor,
-//     this.width = 28,
-//     this.height = 40,
-//     this.rotation = 0,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Transform.rotate(
-//       angle: rotation,
-//       child: Container(
-//         width: width,
-//         height: height,
-//         decoration: BoxDecoration(
-//           color: coverColor,
-//           borderRadius: BorderRadius.only(
-//             topRight: Radius.circular(3),
-//             bottomRight: Radius.circular(3),
-//           ),
-//           boxShadow: [
-//             BoxShadow(
-//               color: Colors.black.withOpacity(0.35),
-//               blurRadius: 4,
-//               offset: const Offset(2, 3),
-//             ),
-//           ],
-//         ),
-//         child: Row(
-//           children: [
-//             Container(
-//               width: 5,
-//               decoration: BoxDecoration(
-//                 color: spineColor,
-//                 borderRadius: BorderRadius.only(
-//                   topLeft: Radius.circular(3),
-//                   bottomLeft: Radius.circular(3),
-//                 ),
-//               ),
-//             ),
-//             Expanded(
-//               child: Padding(
-//                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-//                 child: Column(
-//                   mainAxisAlignment: MainAxisAlignment.center,
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     Container(
-//                       height: 1.5,
-//                       width: double.infinity,
-//                       color: Colors.white.withOpacity(0.25),
-//                     ),
-//                     const SizedBox(height: 3),
-//                     Container(
-//                       height: 1.5,
-//                       width: width * 0.55,
-//                       color: Colors.white.withOpacity(0.18),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-// // ─── Animated floating book ─────────────────────────────────────────────────
-// class _FloatingBook extends StatefulWidget {
-//   final Color spineColor;
-//   final Color coverColor;
-//   final double width;
-//   final double height;
-//   final double rotation;
-//   final Duration delay;
-
-//   const _FloatingBook({
-//     required this.spineColor,
-//     required this.coverColor,
-//     this.width = 28,
-//     this.height = 40,
-//     this.rotation = 0,
-//     this.delay = Duration.zero,
-//   });
-
-//   @override
-//   State<_FloatingBook> createState() => _FloatingBookState();
-// }
-
-// class _FloatingBookState extends State<_FloatingBook>
-//     with SingleTickerProviderStateMixin {
-//   late AnimationController _controller;
-//   late Animation<double> _bobAnimation;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _controller = AnimationController(
-//       vsync: this,
-//       duration: const Duration(milliseconds: 2400),
-//     );
-//     _bobAnimation = Tween<double>(begin: 0, end: -6).animate(
-//       CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
-//     );
-//     Future.delayed(widget.delay, () {
-//       if (mounted) _controller.repeat(reverse: true);
-//     });
-//   }
-
-//   @override
-//   void dispose() {
-//     _controller.dispose();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return AnimatedBuilder(
-//       animation: _bobAnimation,
-//       builder: (_, child) => Transform.translate(
-//         offset: Offset(0, _bobAnimation.value),
-//         child: child,
-//       ),
-//       child: _MiniBook(
-//         spineColor: widget.spineColor,
-//         coverColor: widget.coverColor,
-//         width: widget.width,
-//         height: widget.height,
-//         rotation: widget.rotation,
-//       ),
-//     );
-//   }
-// }
-
-// // ─── SIGNUP SCREEN ──────────────────────────────────────────────────────────
-// class SignupScreen extends StatefulWidget {
-//   const SignupScreen({super.key});
-
-//   @override
-//   State<SignupScreen> createState() => _SignupScreenState();
-// }
-
-// class _SignupScreenState extends State<SignupScreen> {
-//   final TextEditingController nameController = TextEditingController();
-//   final TextEditingController emailController = TextEditingController();
-//   final TextEditingController passwordController = TextEditingController();
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final size = MediaQuery.of(context).size;
-
-//     return Scaffold(
-//       body: Container(
-//         width: double.infinity,
-//         height: double.infinity,
-//         decoration: const BoxDecoration(
-//           gradient: LinearGradient(
-//             colors: [Color(0xFF1A0F05), Color(0xFF2B1D0E), Color(0xFF1C1208)],
-//             begin: Alignment.topLeft,
-//             end: Alignment.bottomRight,
-//           ),
-//         ),
-//         child: Stack(
-//           children: [
-//             // ── Subtle radial glow ──────────────────────────────────────────
-//             Positioned(
-//               top: size.height * 0.22,
-//               left: size.width * 0.5 - 160,
-//               child: ImageFiltered(
-//                 imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60), // ✅ moved here
-//                 child: Container(
-//                   width: 320,
-//                   height: 320,
-//                   decoration: BoxDecoration(
-//                     shape: BoxShape.circle,
-//                     color: Color(0xFFFFD166).withOpacity(0.06),
-//                   ),
-//                 ),
-//               ),
-//             ),
-
-//             // ── Floating books ──────────────────────────────────────────────
-//             // Top-left
-//             Positioned(
-//               top: size.height * 0.07,
-//               left: 18,
-//               child: _FloatingBook(
-//                 spineColor: const Color(0xFF5C3D6E),
-//                 coverColor: const Color(0xFF7B5EA7),
-//                 width: 22,
-//                 height: 34,
-//                 rotation: -0.18,
-//                 delay: const Duration(milliseconds: 100),
-//               ),
-//             ),
-//             Positioned(
-//               top: size.height * 0.10,
-//               left: 48,
-//               child: _FloatingBook(
-//                 spineColor: const Color(0xFF2E6B4F),
-//                 coverColor: const Color(0xFF4A9B72),
-//                 width: 18,
-//                 height: 28,
-//                 rotation: 0.22,
-//                 delay: const Duration(milliseconds: 500),
-//               ),
-//             ),
-
-//             // Top-right
-//             Positioned(
-//               top: size.height * 0.05,
-//               right: 22,
-//               child: _FloatingBook(
-//                 spineColor: const Color(0xFF8B5E3C),
-//                 coverColor: const Color(0xFFB07040),
-//                 width: 24,
-//                 height: 36,
-//                 rotation: 0.20,
-//                 delay: const Duration(milliseconds: 300),
-//               ),
-//             ),
-//             Positioned(
-//               top: size.height * 0.09,
-//               right: 54,
-//               child: _FloatingBook(
-//                 spineColor: const Color(0xFF6E3A2E),
-//                 coverColor: const Color(0xFFA05A45),
-//                 width: 17,
-//                 height: 26,
-//                 rotation: -0.14,
-//                 delay: const Duration(milliseconds: 700),
-//               ),
-//             ),
-
-//             // Mid-left
-//             Positioned(
-//               top: size.height * 0.40,
-//               left: 12,
-//               child: _FloatingBook(
-//                 spineColor: const Color(0xFF6B4E71),
-//                 coverColor: const Color(0xFF9176A0),
-//                 width: 20,
-//                 height: 30,
-//                 rotation: -0.25,
-//                 delay: const Duration(milliseconds: 200),
-//               ),
-//             ),
-
-//             // Mid-right
-//             Positioned(
-//               top: size.height * 0.44,
-//               right: 16,
-//               child: _FloatingBook(
-//                 spineColor: const Color(0xFF4A6741),
-//                 coverColor: const Color(0xFF6B9E5D),
-//                 width: 21,
-//                 height: 32,
-//                 rotation: 0.16,
-//                 delay: const Duration(milliseconds: 900),
-//               ),
-//             ),
-
-//             // Bottom-left
-//             Positioned(
-//               bottom: size.height * 0.09,
-//               left: 26,
-//               child: _FloatingBook(
-//                 spineColor: const Color(0xFF3A6B55),
-//                 coverColor: const Color(0xFF5AA088),
-//                 width: 23,
-//                 height: 35,
-//                 rotation: 0.18,
-//                 delay: const Duration(milliseconds: 600),
-//               ),
-//             ),
-//             Positioned(
-//               bottom: size.height * 0.12,
-//               left: 56,
-//               child: _FloatingBook(
-//                 spineColor: const Color(0xFF7A4E2D),
-//                 coverColor: const Color(0xFFB07848),
-//                 width: 16,
-//                 height: 25,
-//                 rotation: -0.10,
-//                 delay: const Duration(milliseconds: 400),
-//               ),
-//             ),
-
-//             // Bottom-right
-//             Positioned(
-//               bottom: size.height * 0.07,
-//               right: 20,
-//               child: _FloatingBook(
-//                 spineColor: const Color(0xFF5E3D73),
-//                 coverColor: const Color(0xFF8562A3),
-//                 width: 22,
-//                 height: 34,
-//                 rotation: -0.20,
-//                 delay: const Duration(milliseconds: 800),
-//               ),
-//             ),
-//             Positioned(
-//               bottom: size.height * 0.11,
-//               right: 52,
-//               child: _FloatingBook(
-//                 spineColor: const Color(0xFF5B7A3A),
-//                 coverColor: const Color(0xFF82AD5A),
-//                 width: 18,
-//                 height: 27,
-//                 rotation: 0.24,
-//                 delay: const Duration(milliseconds: 150),
-//               ),
-//             ),
-
-//             // ── Main content ────────────────────────────────────────────────
-//             Center(
-//               child: SingleChildScrollView(
-//                 physics: const BouncingScrollPhysics(),
-//                 child: Padding(
-//                   padding: const EdgeInsets.symmetric(horizontal: 24),
-//                   child: Container(
-//                     width: 380,
-//                     padding: const EdgeInsets.all(32),
-//                     decoration: BoxDecoration(
-//                       color: Colors.white.withOpacity(0.04),
-//                       borderRadius: BorderRadius.circular(28),
-//                       border: Border.all(
-//                         color: Colors.white.withOpacity(0.08),
-//                         width: 1,
-//                       ),
-//                       boxShadow: [
-//                         BoxShadow(
-//                           color: Colors.black.withOpacity(0.5),
-//                           blurRadius: 40,
-//                           offset: const Offset(0, 8),
-//                         ),
-//                         BoxShadow(
-//                           color: const Color(0xFFFFD166).withOpacity(0.04),
-//                           blurRadius: 60,
-//                           offset: const Offset(0, -10),
-//                         ),
-//                       ],
-//                     ),
-//                     child: Column(
-//                       mainAxisSize: MainAxisSize.min,
-//                       children: [
-//                         // ── Icon ────────────────────────────────────────
-//                         Container(
-//                           width: 72,
-//                           height: 72,
-//                           decoration: BoxDecoration(
-//                             shape: BoxShape.circle,
-//                             gradient: const LinearGradient(
-//                               colors: [Color(0xFFFFD166), Color(0xFFE8A832)],
-//                               begin: Alignment.topLeft,
-//                               end: Alignment.bottomRight,
-//                             ),
-//                             boxShadow: [
-//                               BoxShadow(
-//                                 color: const Color(
-//                                   0xFFFFD166,
-//                                 ).withOpacity(0.35),
-//                                 blurRadius: 20,
-//                                 offset: const Offset(0, 4),
-//                               ),
-//                             ],
-//                           ),
-//                           child: const Icon(
-//                             Icons.person_add_alt_1,
-//                             color: Color(0xFF1C1208),
-//                             size: 32,
-//                           ),
-//                         ),
-//                         const SizedBox(height: 20),
-
-//                         // ── Title ───────────────────────────────────────
-//                         const Text(
-//                           "Create Account",
-//                           style: TextStyle(
-//                             fontSize: 26,
-//                             fontWeight: FontWeight.bold,
-//                             color: Colors.white,
-//                             letterSpacing: 0.3,
-//                           ),
-//                           textAlign: TextAlign.center,
-//                         ),
-//                         const SizedBox(height: 6),
-//                         const Text(
-//                           "Start your reading journey today",
-//                           style: TextStyle(
-//                             fontSize: 14,
-//                             color: Colors.white54,
-//                             letterSpacing: 0.2,
-//                           ),
-//                           textAlign: TextAlign.center,
-//                         ),
-
-//                         // ── Decorative divider ──────────────────────────
-//                         const SizedBox(height: 24),
-//                         Row(
-//                           mainAxisAlignment: MainAxisAlignment.center,
-//                           children: [
-//                             Container(
-//                               height: 1,
-//                               width: 40,
-//                               color: Colors.white.withOpacity(0.10),
-//                             ),
-//                             const SizedBox(width: 10),
-//                             _MiniBook(
-//                               spineColor: const Color(0xFF2E6B4F),
-//                               coverColor: const Color(0xFF4A9B72),
-//                               width: 14,
-//                               height: 20,
-//                               rotation: 0.0,
-//                             ),
-//                             const SizedBox(width: 6),
-//                             _MiniBook(
-//                               spineColor: const Color(0xFF8B5E3C),
-//                               coverColor: const Color(0xFFB07040),
-//                               width: 12,
-//                               height: 18,
-//                               rotation: -0.06,
-//                             ),
-//                             const SizedBox(width: 6),
-//                             _MiniBook(
-//                               spineColor: const Color(0xFF5C3D6E),
-//                               coverColor: const Color(0xFF7B5EA7),
-//                               width: 14,
-//                               height: 20,
-//                               rotation: 0.07,
-//                             ),
-//                             const SizedBox(width: 10),
-//                             Container(
-//                               height: 1,
-//                               width: 40,
-//                               color: Colors.white.withOpacity(0.10),
-//                             ),
-//                           ],
-//                         ),
-//                         const SizedBox(height: 28),
-
-//                         // ── Name field ──────────────────────────────────
-//                         CustomTextField(
-//                           hint: "Name",
-//                           icon: Icons.person_outline,
-//                           controller: nameController,
-//                         ),
-//                         const SizedBox(height: 14),
-
-//                         // ── Email field ─────────────────────────────────
-//                         CustomTextField(
-//                           hint: "Email",
-//                           icon: Icons.email_outlined,
-//                           controller: emailController,
-//                         ),
-//                         const SizedBox(height: 14),
-
-//                         // ── Password field ──────────────────────────────
-//                         CustomTextField(
-//                           hint: "Password",
-//                           icon: Icons.lock_outline,
-//                           obscure: true,
-//                           controller: passwordController,
-//                         ),
-//                         const SizedBox(height: 28),
-
-//                         // ── Sign Up Button ──────────────────────────────
-//                         CustomButton(
-//                           text: "Sign Up",
-//                           onTap: () async {
-//                             try {
-//                               final result = await ApiService.signup(
-//                                 name: nameController.text.trim(),
-//                                 email: emailController.text.trim(),
-//                                 password: passwordController.text.trim(),
-//                               );
-
-//                               final int userId = result["user_id"];
-
-//                               Navigator.pushReplacement(
-//                                 context,
-//                                 MaterialPageRoute(
-//                                   builder: (_) =>
-//                                       GenreSelectionScreen(userId: userId),
-//                                 ),
-//                               );
-//                             } catch (e) {
-//                               ScaffoldMessenger.of(context).showSnackBar(
-//                                 SnackBar(content: Text(e.toString())),
-//                               );
-//                             }
-//                           },
-//                         ),
-//                       ],
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../widgets/custom_textfield.dart';
 import '../../widgets/custom_button.dart';
 import '../../services/api_service.dart';
 import '../onboarding/genre_selection_screen.dart';
+
+bool isValidEmail(String email) {
+  final regex = RegExp(r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$');
+  return regex.hasMatch(email);
+}
 
 // ─── PASTEL PALETTE ──────────────────────────────────────────────────────────
 class _P {
@@ -783,20 +263,55 @@ class _SignupScreenState extends State<SignupScreen> {
                         CustomButton(
                           text: "Sign Up",
                           onTap: () async {
-                            try {
-                              final result = await ApiService.signup(
-                                name:     nameController.text.trim(),
-                                email:    emailController.text.trim(),
-                                password: passwordController.text.trim(),
-                              );
-                              final int userId = result["user_id"];
-                              Navigator.pushReplacement(context, MaterialPageRoute(
+                          final name = nameController.text.trim();
+                          final email = emailController.text.trim();
+                          final password = passwordController.text.trim();
+
+                          if (name.isEmpty || email.isEmpty || password.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("All fields are required")),
+                            );
+                            return;
+                          }
+
+                          if (!isValidEmail(email)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Enter a valid email")),
+                            );
+                            return;
+                          }
+
+                          if (password.length < 6) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Password must be at least 6 characters")),
+                            );
+                            return;
+                          }
+
+                          try {
+                            final result = await ApiService.signup(
+                              name: name,
+                              email: email,
+                              password: password,
+                            );
+
+                            final int userId = result["user_id"];
+
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
                                 builder: (_) => GenreSelectionScreen(userId: userId),
-                              ));
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-                            }
-                          },
+                              ),
+                            );
+                          } catch (e) {
+                            final message = e.toString().contains("already")
+                                ? "Email already registered"
+                                : "Signup failed. Try again";
+
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(SnackBar(content: Text(message)));
+                          }
+                        },
                         ),
                       ],
                     ),

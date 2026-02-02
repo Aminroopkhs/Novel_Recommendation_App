@@ -7,6 +7,11 @@ import '../home/home_screen.dart';
 import '../onboarding/genre_selection_screen.dart';
 import 'signup_screen.dart';
 
+bool isValidEmail(String email) {
+  final regex = RegExp(r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$');
+  return regex.hasMatch(email);
+}
+
 // ─── PASTEL PALETTE ──────────────────────────────────────────────────────────
 class _P {
   static const Color bg          = Color(0xFFF7F3EF);   // warm cream
@@ -262,22 +267,58 @@ class _LoginScreenState extends State<LoginScreen> {
                         CustomButton(
                           text: "Login",
                           onTap: () async {
-                            try {
-                              final result = await ApiService.login(
-                                email: emailController.text.trim(),
-                                password: passwordController.text.trim(),
+                          final email = emailController.text.trim();
+                          final password = passwordController.text.trim();
+
+                          // ❌ empty fields
+                          if (email.isEmpty || password.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Please fill all fields")),
+                            );
+                            return;
+                          }
+
+                          // ❌ invalid email
+                          if (!isValidEmail(email)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Enter a valid email")),
+                            );
+                            return;
+                          }
+
+                          try {
+                            final result = await ApiService.login(
+                              email: email,
+                              password: password,
+                            );
+
+                            final bool isNewUser = result["is_new_user"];
+                            final int userId = result["user_id"];
+
+                            if (isNewUser) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => GenreSelectionScreen(userId: userId),
+                                ),
                               );
-                              final bool isNewUser = result["is_new_user"];
-                              final int userId   = result["user_id"];
-                              if (isNewUser) {
-                                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => GenreSelectionScreen(userId: userId)));
-                              } else {
-                                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-                              }
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                            } else {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const HomeScreen(),
+                                ),
+                              );
                             }
-                          },
+                          } catch (e) {
+                            final message = e.toString().contains("Invalid")
+                                ? "Invalid email or password"
+                                : "Login failed. Try again";
+
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(SnackBar(content: Text(message)));
+                          }
+                        },
                         ),
                         const SizedBox(height: 20),
 

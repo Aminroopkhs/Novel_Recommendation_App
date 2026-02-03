@@ -45,3 +45,19 @@ class UserNovelInteraction(Base):
     novel_id = Column(Integer, ForeignKey("novels.id"))
     status = Column(String, nullable=False)   # wishlist | reading | completed
     liked = Column(Boolean, default=False)
+
+class UserLibrary(Base):
+    __tablename__ = "user_library"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    novel_id = Column(Integer, ForeignKey("novels.id"))
+
+
+class UserWishlist(Base):
+    __tablename__ = "user_wishlist"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    novel_id = Column(Integer, ForeignKey("novels.id"))
+

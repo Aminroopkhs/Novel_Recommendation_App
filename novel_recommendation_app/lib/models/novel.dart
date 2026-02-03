@@ -6,8 +6,8 @@ class Novel {
   final String tropes;
   final String imageUrl;
   final String synopsis;
-  final String rating;
-  final String ratedBy;
+  final double rating;
+  final int ratedBy;
 
   Novel({
     required this.id,
@@ -23,15 +23,17 @@ class Novel {
 
   factory Novel.fromJson(Map<String, dynamic> json) {
     return Novel(
-      id: json['id'],
-      title: json['title'] ?? '',
-      author: json['author'] ?? '',
-      genre: json['genre'] ?? '',
-      tropes: json['tropes'] ?? '',
-      imageUrl: json['image_url'] ?? '',
-      synopsis: json['synopsis'] ?? '',
-      rating: json['rating'] ?? '',
-      ratedBy: json['rated_by'] ?? '',
+      id: json["id"],
+      title: json["title"] ?? "",
+      author: json["author"] ?? "",
+      genre: json["genre"] ?? "",
+      tropes: json["tropes"]?? "",
+      imageUrl: json["imageUrl"] ?? "",
+      synopsis: json["synopsis"] ?? "",
+      rating: json["rating"] == null
+          ? 0.0
+          : double.tryParse(json["rating"].toString()) ?? 0.0,
+      ratedBy: json["ratedBy"] ?? 0,
     );
   }
 }

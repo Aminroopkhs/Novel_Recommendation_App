@@ -8,8 +8,9 @@ import '../onboarding/genre_selection_screen.dart';
 import 'signup_screen.dart';
 
 bool isValidEmail(String email) {
-  final regex = RegExp(r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$');
-  return regex.hasMatch(email);
+  return RegExp(
+    r'^[a-zA-Z][a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+  ).hasMatch(email);
 }
 
 // ─── PASTEL PALETTE ──────────────────────────────────────────────────────────
@@ -306,7 +307,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const HomeScreen(),
+                                  builder: (_) => HomeScreen(userId: userId),
                                 ),
                               );
                             }

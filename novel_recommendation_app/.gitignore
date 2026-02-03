@@ -49,4 +49,5 @@ backend/novel_app.db
 __pycache__/
 .env
 
+.backend/db_check.py
 pubspec.lock

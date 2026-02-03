@@ -97,6 +97,21 @@ def get_available_genres():
             "Romance",
         ]
     }
+@app.get("/user/preferences")
+def get_user_preferences(
+    user_id: int,
+    db: Session = Depends(get_db),
+):
+    prefs = (
+        db.query(models.UserPreference.genre)
+        .filter(models.UserPreference.user_id == user_id)
+        .all()
+    )
+
+    return {
+        "genres": [p[0] for p in prefs]
+    }
+
 
 # ───────────────── SAVE USER GENRE PREFERENCES ─────────────────
 @app.post("/user/preferences")
@@ -155,3 +170,66 @@ def get_novels_by_genre(genre: str, db: Session = Depends(get_db)):
         )
 
     return novels
+
+@app.post("/library/add")
+def add_to_library(user_id: int, novel_id: int, db: Session = Depends(get_db)):
+    exists = db.query(models.UserLibrary).filter_by(
+        user_id=user_id, novel_id=novel_id
+    ).first()
+
+    if exists:
+        return {"message": "Already in library"}
+
+    db.add(models.UserLibrary(user_id=user_id, novel_id=novel_id))
+    db.commit()
+    return {"message": "Added to library"}
+
+
+@app.post("/wishlist/add")
+def add_to_wishlist(user_id: int, novel_id: int, db: Session = Depends(get_db)):
+    exists = db.query(models.UserWishlist).filter_by(
+        user_id=user_id, novel_id=novel_id
+    ).first()
+
+    if exists:
+        return {"message": "Already in wishlist"}
+
+    db.add(models.UserWishlist(user_id=user_id, novel_id=novel_id))
+    db.commit()
+    return {"message": "Added to wishlist"}
+
+@app.post("/wishlist/remove")
+def remove_from_wishlist(user_id: int, novel_id: int, db: Session = Depends(get_db)):
+    db.query(models.UserWishlist).filter_by(
+        user_id=user_id, novel_id=novel_id
+    ).delete()
+    db.commit()
+    return {"message": "Removed from wishlist"}
+
+@app.post("/library/remove")
+def remove_from_library(user_id: int, novel_id: int, db: Session = Depends(get_db)):
+    db.query(models.UserLibrary).filter_by(
+        user_id=user_id, novel_id=novel_id
+    ).delete()
+    db.commit()
+    return {"message": "Removed from library"}
+
+@app.get("/wishlist/{user_id}")
+def get_wishlist(user_id: int, db: Session = Depends(get_db)):
+    return (
+        db.query(models.Novel)
+        .join(models.UserWishlist, models.UserWishlist.novel_id == models.Novel.id)
+        .filter(models.UserWishlist.user_id == user_id)
+        .all()
+    )
+
+@app.get("/library/{user_id}")
+def get_library(user_id: int, db: Session = Depends(get_db)):
+    return (
+        db.query(models.Novel)
+        .join(models.UserLibrary, models.UserLibrary.novel_id == models.Novel.id)
+        .filter(models.UserLibrary.user_id == user_id)
+        .all()
+    )
+
+

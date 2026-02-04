@@ -73,6 +73,7 @@ class _HomeScreenState extends State<HomeScreen>
   Future<void> _loadUserGenres() async {
     try {
       final genres = await ApiService.fetchUserGenres(widget.userId);
+      print("Fetching genres for user ${widget.userId}");
       setState(() => _userGenres = genres);
     } catch (e) {
       debugPrint("Failed to load user genres: $e");
@@ -1001,7 +1002,7 @@ class _ProfileDrawer extends StatelessWidget {
   static const String _name = "Reader";
   static const String _email = "you@email.com";
   static const List<String> _genres = ["Romance", "Mystery", "Science Fiction"];
-
+  
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(

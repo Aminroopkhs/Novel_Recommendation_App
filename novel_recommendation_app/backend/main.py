@@ -12,6 +12,12 @@ from schemas import (
 )
 from auth import create_user, authenticate_user
 
+from recommender.bert_recommender import (
+    generate_novel_embeddings,
+    generate_user_embedding,
+    recommend_novels,
+)
+
 # ───────────────── APP SETUP ─────────────────
 app = FastAPI(title="Novel Recommendation Backend")
 
@@ -232,4 +238,39 @@ def get_library(user_id: int, db: Session = Depends(get_db)):
         .all()
     )
 
+# Recommender
+@app.get("/recommend/{user_id}")
+def recommend_for_user(user_id: int, db: Session = Depends(get_db)):
+    # 1. Get user genres
+    prefs = (
+        db.query(models.UserPreference.genre)
+        .filter(models.UserPreference.user_id == user_id)
+        .all()
+    )
 
+    user_genres = [p[0] for p in prefs]
+
+    if not user_genres:
+        raise HTTPException(status_code=400, detail="User has no preferences")
+
+    # 2. Get all novels
+    novels = db.query(models.Novel).all()
+    if not novels:
+        raise HTTPException(status_code=404, detail="No novels available")
+
+    # 3. Generate embeddings
+    novel_embeddings = generate_novel_embeddings(novels)
+    user_embedding = generate_user_embedding(user_genres)
+
+    # 4. Recommend
+    recommendations = recommend_novels(
+        novels,
+        novel_embeddings,
+        user_embedding,
+        top_k=5,
+    )
+
+    return {
+        "user_id": user_id,
+        "recommended": recommendations,
+    }

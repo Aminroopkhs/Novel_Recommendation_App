@@ -158,18 +158,33 @@ static Future<void> removeFromLibrary(int userId, int novelId) async {
   );
 }
 
+// static Future<List<String>> fetchUserGenres(int userId) async {
+//   final response = await http.post(
+//     Uri.parse("$baseUrl/user/preferences?user_id=$userId"),
+//     headers: {"Content-Type": "application/json"},
+//     body: jsonEncode({"user_id": userId}),
+//   );
+
+//   if (response.statusCode == 200) {
+//     final data = jsonDecode(response.body);
+//     return List<String>.from(data["genres"]);
+//   } else {
+//     throw Exception("Failed to fetch user genres");
+//   }
+// }
+
 static Future<List<String>> fetchUserGenres(int userId) async {
-  final response = await http.post(
+  final response = await http.get(
     Uri.parse("$baseUrl/user/preferences?user_id=$userId"),
-    headers: {"Content-Type": "application/json"},
-    body: jsonEncode({"user_id": userId}),
   );
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
     return List<String>.from(data["genres"]);
   } else {
-    throw Exception("Failed to fetch user genres");
+    throw Exception(
+      "Failed to fetch user genres (${response.statusCode})",
+    );
   }
 }
 

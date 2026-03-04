@@ -60,6 +60,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late Future<List<Novel>> _novelsFuture;
+  Future<List<Novel>>? _recommendationsFuture;
   bool _drawerOpen = false;
   late AnimationController _dCtrl;
   late Animation<double> _dSlide;
@@ -85,6 +86,7 @@ class _HomeScreenState extends State<HomeScreen>
     super.initState();
     _novelsFuture = ApiService.fetchAllNovels();
     _loadUserGenres();
+    _recommendationsFuture = ApiService.fetchRecommendations(widget.userId);
     _dCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 380),
@@ -134,6 +136,7 @@ class _HomeScreenState extends State<HomeScreen>
                     return _Body(
                       genreNovels: genreNovels,
                       allNovels: allNovels,
+                      recommendationsFuture: _recommendationsFuture,
                     );
                   },
                 ),
@@ -255,8 +258,13 @@ class _AppBar extends StatelessWidget {
 class _Body extends StatefulWidget {
   final List<Novel> genreNovels;
   final List<Novel> allNovels;
+  final Future<List<Novel>>? recommendationsFuture;
 
-  const _Body({required this.genreNovels, required this.allNovels});
+  const _Body({
+    required this.genreNovels,
+    required this.allNovels,
+    this.recommendationsFuture,
+  });
 
   @override
   State<_Body> createState() => _BodyState();
@@ -338,6 +346,76 @@ class _BodyState extends State<_Body> with SingleTickerProviderStateMixin {
           ),
 
           const SizedBox(height: 28),
+
+          // ─── RECOMMENDATIONS ─────────────────────────────────────────────
+          if (widget.recommendationsFuture != null)
+            FutureBuilder<List<Novel>>(
+              future: widget.recommendationsFuture,
+              builder: (_, recSnap) {
+                if (recSnap.connectionState == ConnectionState.waiting) {
+                  // shimmer placeholder row
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _SectionTitle(
+                        title: '🤖 Recommended for You',
+                        sub: 'Loading…',
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        height: 195,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 22),
+                          itemCount: 4,
+                          itemBuilder: (_, __) => Padding(
+                            padding: const EdgeInsets.only(right: 14),
+                            child: _Shimmer(w: 135, h: 195, r: 18),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                    ],
+                  );
+                }
+
+                if (recSnap.hasError || !recSnap.hasData || recSnap.data!.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+
+                final recommended = recSnap.data!;
+                // Derive a display label from the genres in the results
+                final genres = recommended
+                    .map((n) => n.genre)
+                    .toSet()
+                    .take(3)
+                    .join(', ');
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SectionTitle(
+                      title: '🤖 Recommended for You',
+                      sub: genres.isNotEmpty ? genres : '${recommended.length} picks',
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      height: 195,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 22),
+                        itemCount: recommended.length,
+                        itemBuilder: (_, i) =>
+                            _FeaturedCard(novel: recommended[i], index: i),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                  ],
+                );
+              },
+            ),
 
           // ─── ALL NOVELS ──────────────────────────────────────────────────
           _SectionTitle(

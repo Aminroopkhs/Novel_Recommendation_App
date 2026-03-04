@@ -27,13 +27,18 @@ class Novel {
       title: json["title"] ?? "",
       author: json["author"] ?? "",
       genre: json["genre"] ?? "",
-      tropes: json["tropes"]?? "",
-      imageUrl: json["imageUrl"] ?? "",
+      tropes: json["tropes"] ?? "",
+      // Accept both camelCase (legacy) and snake_case (FastAPI default)
+      imageUrl: json["imageUrl"] ?? json["image_url"] ?? "",
       synopsis: json["synopsis"] ?? "",
       rating: json["rating"] == null
           ? 0.0
           : double.tryParse(json["rating"].toString()) ?? 0.0,
-      ratedBy: json["ratedBy"] ?? 0,
+      ratedBy: (() {
+        final raw = json["ratedBy"] ?? json["rated_by"] ?? 0;
+        if (raw is int) return raw;
+        return int.tryParse(raw.toString()) ?? 0;
+      })(),
     );
   }
 }

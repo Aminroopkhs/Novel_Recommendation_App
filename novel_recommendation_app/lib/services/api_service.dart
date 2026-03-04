@@ -188,6 +188,25 @@ static Future<List<String>> fetchUserGenres(int userId) async {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// RECOMMENDATIONS
+// ─────────────────────────────────────────────────────────────────────────────
 
+/// Calls GET /recommend/{userId} and returns the top-k recommended novels.
+/// Throws when the user has no saved preferences or the backend errors.
+static Future<List<Novel>> fetchRecommendations(int userId) async {
+  final res = await http.get(Uri.parse("$baseUrl/recommend/$userId"));
+
+  if (res.statusCode == 200) {
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    final List items = data["recommended"] as List;
+    return items
+        .map((e) => Novel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  } else {
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    throw Exception(body["detail"] ?? "Failed to fetch recommendations");
+  }
+}
 
 }

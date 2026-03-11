@@ -5,6 +5,7 @@ import '../novel/novel_detail_screen.dart';
 
 class WishlistScreen extends StatefulWidget {
   final int userId;
+
   const WishlistScreen({super.key, required this.userId});
 
   @override
@@ -12,57 +13,76 @@ class WishlistScreen extends StatefulWidget {
 }
 
 class _WishlistScreenState extends State<WishlistScreen> {
+
   late Future<List<Novel>> _wishlistFuture;
 
   @override
   void initState() {
     super.initState();
+    _loadWishlist();
+  }
+
+  void _loadWishlist() {
     _wishlistFuture = ApiService.fetchWishlist(widget.userId);
+  }
+
+  Future<void> _removeNovel(int novelId) async {
+
+    await ApiService.removeFromWishlist(widget.userId, novelId);
+
+    setState(() {
+      _loadWishlist();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Wishlist")),
+      appBar: AppBar(
+        title: const Text("Wishlist"),
+      ),
+
       body: FutureBuilder<List<Novel>>(
         future: _wishlistFuture,
-        builder: (_, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
+        builder: (context, snapshot) {
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snap.hasError) {
-            return const Center(child: Text("Failed to load wishlist"));
-          }
 
-          final novels = snap.data!;
-          if (novels.isEmpty) {
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text("Your wishlist is empty"));
           }
 
+          final novels = snapshot.data!;
+
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
             itemCount: novels.length,
-            itemBuilder: (_, i) {
-              final n = novels[i];
+            itemBuilder: (context, index) {
+
+              final novel = novels[index];
+
               return ListTile(
-                leading: Image.network(n.imageUrl, width: 50, fit: BoxFit.cover),
-                title: Text(n.title),
-                subtitle: Text(n.author),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () async {
-                    await ApiService.removeFromWishlist(widget.userId, n.id);
-                    setState(() {
-                      _wishlistFuture =
-                          ApiService.fetchWishlist(widget.userId);
-                    });
-                  },
+                leading: Image.network(
+                  novel.imageUrl,
+                  width: 50,
+                  fit: BoxFit.cover,
                 ),
+
+                title: Text(novel.title),
+                subtitle: Text(novel.author),
+
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () => _removeNovel(novel.id),
+                ),
+
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => NovelDetailScreen(novel: n),
+                      builder: (_) => NovelDetailScreen(userId: widget.userId, novel: novel),
                     ),
                   );
                 },

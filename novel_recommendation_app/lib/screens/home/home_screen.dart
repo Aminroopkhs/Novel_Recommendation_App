@@ -134,6 +134,7 @@ class _HomeScreenState extends State<HomeScreen>
                     return _Body(
                       genreNovels: genreNovels,
                       allNovels: allNovels,
+                      userId: widget.userId,
                     );
                   },
                 ),
@@ -168,6 +169,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
             child: _ProfileDrawer(
+              key: UniqueKey(),
               userId: widget.userId,
               onClose: _toggleDrawer,
             ),
@@ -255,8 +257,13 @@ class _AppBar extends StatelessWidget {
 class _Body extends StatefulWidget {
   final List<Novel> genreNovels;
   final List<Novel> allNovels;
+  final int userId;
 
-  const _Body({required this.genreNovels, required this.allNovels});
+  const _Body({
+    required this.genreNovels,
+    required this.allNovels,
+    required this.userId,
+  });
 
   @override
   State<_Body> createState() => _BodyState();
@@ -291,11 +298,12 @@ class _BodyState extends State<_Body> with SingleTickerProviderStateMixin {
     if (widget.allNovels.isEmpty) {
       return const SizedBox.shrink();
     }
-    final List<Novel> source =
-        widget.genreNovels.isNotEmpty ? widget.genreNovels : widget.allNovels;
+    final List<Novel> source = widget.genreNovels.isNotEmpty
+        ? widget.genreNovels
+        : widget.allNovels;
 
-        final featured = source.take(8).toList();
-        final hero = source.first;
+    final featured = source.take(8).toList();
+    final hero = source.first;
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -332,8 +340,11 @@ class _BodyState extends State<_Body> with SingleTickerProviderStateMixin {
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 22),
               itemCount: featured.length,
-              itemBuilder: (_, i) =>
-                  _FeaturedCard(novel: featured[i], index: i),
+              itemBuilder: (_, i) => _FeaturedCard(
+                novel: featured[i],
+                index: i,
+                userId: widget.userId,
+              ),
             ),
           ),
 
@@ -349,7 +360,7 @@ class _BodyState extends State<_Body> with SingleTickerProviderStateMixin {
             padding: const EdgeInsets.symmetric(horizontal: 22),
             child: Column(
               children: widget.allNovels
-                  .mapIndexed((i, n) => _NovelRow(novel: n, index: i))
+                  .mapIndexed((i, n) => _NovelRow(novel: n, index: i, userId: widget.userId))
                   .toList(),
             ),
           ),
@@ -597,7 +608,12 @@ class _HeroBannerState extends State<_HeroBanner>
 class _FeaturedCard extends StatefulWidget {
   final Novel novel;
   final int index;
-  const _FeaturedCard({required this.novel, required this.index});
+  final int userId;
+  const _FeaturedCard({
+    required this.novel,
+    required this.index,
+    required this.userId,
+  });
   @override
   State<_FeaturedCard> createState() => _FeaturedCardState();
 }
@@ -656,7 +672,10 @@ class _FeaturedCardState extends State<_FeaturedCard>
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => NovelDetailScreen(novel: widget.novel),
+                builder: (_) => NovelDetailScreen(
+                  userId: widget.userId,
+                  novel: widget.novel,
+                ),
               ),
             );
           },
@@ -760,7 +779,8 @@ class _FeaturedCardState extends State<_FeaturedCard>
 class _NovelRow extends StatefulWidget {
   final Novel novel;
   final int index;
-  const _NovelRow({required this.novel, required this.index});
+  final int userId;
+  const _NovelRow({required this.novel, required this.index, required this.userId});
   @override
   State<_NovelRow> createState() => _NovelRowState();
 }
@@ -821,7 +841,10 @@ class _NovelRowState extends State<_NovelRow>
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => NovelDetailScreen(novel: widget.novel),
+                builder: (_) => NovelDetailScreen(
+                  userId: widget.userId,
+                  novel: widget.novel,
+                ),
               ),
             );
           },
@@ -994,15 +1017,51 @@ class _NovelRowState extends State<_NovelRow>
 // ═════════════════════════════════════════════════════════════════════════════
 //  PROFILE DRAWER
 // ═════════════════════════════════════════════════════════════════════════════
-class _ProfileDrawer extends StatelessWidget {
+class _ProfileDrawer extends StatefulWidget {
   final int userId;
   final VoidCallback onClose;
-  const _ProfileDrawer({required this.userId, required this.onClose});
 
-  static const String _name = "Reader";
-  static const String _email = "you@email.com";
-  static const List<String> _genres = ["Romance", "Mystery", "Science Fiction"];
-  
+  const _ProfileDrawer({Key? key, required this.userId, required this.onClose})
+    : super(key: key);
+
+  @override
+  State<_ProfileDrawer> createState() => _ProfileDrawerState();
+}
+
+class _ProfileDrawerState extends State<_ProfileDrawer> {
+  String name = "";
+  String email = "";
+  List<String> genres = [];
+
+  int libraryCount = 0;
+  int wishlistCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    loadProfile();
+  }
+
+  Future<void> loadProfile() async {
+    try {
+      final user = await ApiService.fetchUser(widget.userId);
+      final wishlist = await ApiService.fetchWishlist(widget.userId);
+      final library = await ApiService.fetchLibrary(widget.userId);
+      final userGenres = await ApiService.fetchUserGenres(widget.userId);
+
+      setState(() {
+        name = user["name"];
+        email = user["email"];
+        genres = userGenres;
+
+        libraryCount = library.length;
+        wishlistCount = wishlist.length;
+      });
+    } catch (e) {
+      debugPrint("Profile load error: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
@@ -1034,7 +1093,7 @@ class _ProfileDrawer extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: onClose,
+                  onTap: widget.onClose,
                   child: Container(
                     width: 36,
                     height: 36,
@@ -1083,21 +1142,24 @@ class _ProfileDrawer extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 14),
-                const Text(
-                  _name,
-                  style: TextStyle(
+
+                Text(
+                  name,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: _P.textPrimary,
                   ),
                 ),
-                const Text(
-                  _email,
-                  style: TextStyle(fontSize: 13, color: _P.textHint),
+
+                Text(
+                  email,
+                  style: const TextStyle(fontSize: 13, color: _P.textHint),
                 ),
               ],
             ),
           ),
+
           const SizedBox(height: 22),
           _Div(),
 
@@ -1107,13 +1169,14 @@ class _ProfileDrawer extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 22),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: const [
-                _Stat(value: '12', label: 'Reading'),
-                _Stat(value: '38', label: 'Finished'),
-                _Stat(value: '7', label: 'Wishlist'),
+              children: [
+                _Stat(value: "$libraryCount", label: 'Reading'),
+                const _Stat(value: '0', label: 'Finished'),
+                _Stat(value: "$wishlistCount", label: 'Wishlist'),
               ],
             ),
           ),
+
           const SizedBox(height: 18),
           _Div(),
 
@@ -1134,12 +1197,14 @@ class _ProfileDrawer extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
+
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _genres.map((g) {
+                  children: genres.map((g) {
                     final a = _gA[g] ?? _P.lavender;
                     final as = _gAS[g] ?? _P.lavenderSoft;
+
                     return Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 15,
@@ -1164,11 +1229,13 @@ class _ProfileDrawer extends StatelessWidget {
               ],
             ),
           ),
+
           const SizedBox(height: 18),
           _Div(),
 
           // menu
           const SizedBox(height: 8),
+
           _DrawerTile(
             icon: Icons.library_books_rounded,
             label: 'My Library',
@@ -1178,11 +1245,12 @@ class _ProfileDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => LibraryScreen(userId: userId),
+                  builder: (_) => LibraryScreen(userId: widget.userId),
                 ),
               );
             },
           ),
+
           _DrawerTile(
             icon: Icons.bookmark_add_rounded,
             label: 'Wishlist',
@@ -1192,11 +1260,12 @@ class _ProfileDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => WishlistScreen(userId: userId),
+                  builder: (_) => WishlistScreen(userId: widget.userId),
                 ),
               );
             },
           ),
+
           _DrawerTile(
             icon: Icons.settings_rounded,
             label: 'Settings',
@@ -1218,10 +1287,10 @@ class _ProfileDrawer extends StatelessWidget {
                 color: _P.roseSoft,
                 border: Border.all(color: _P.rose.withOpacity(0.3)),
               ),
-              child: Center(
+              child: const Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.logout_rounded, color: _P.rose, size: 19),
                     SizedBox(width: 8),
                     Text(

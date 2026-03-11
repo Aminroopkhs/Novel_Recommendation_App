@@ -43,6 +43,19 @@ class ApiService {
     }
   }
 
+  // ------USER-----
+  static Future<Map<String, dynamic>> fetchUser(int userId) async {
+
+    final response = await http.get(
+      Uri.parse("$baseUrl/user/$userId"),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Failed to load user");
+    }
+  }
   // ---------- NOVELS ----------
 
   static Future<List<Novel>> fetchAllNovels() async {
@@ -95,13 +108,9 @@ class ApiService {
   }
 
   static Future<void> addToWishlist(int userId, int novelId) async {
+
   final response = await http.post(
-    Uri.parse("$baseUrl/wishlist/add"),
-    headers: {"Content-Type": "application/json"},
-    body: jsonEncode({
-      "user_id": userId,
-      "novel_id": novelId,
-    }),
+    Uri.parse("$baseUrl/wishlist/add?user_id=$userId&novel_id=$novelId"),
   );
 
   if (response.statusCode != 200) {
@@ -110,13 +119,9 @@ class ApiService {
 }
 
 static Future<void> removeFromWishlist(int userId, int novelId) async {
-  final response = await http.delete(
-    Uri.parse("$baseUrl/wishlist/remove"),
-    headers: {"Content-Type": "application/json"},
-    body: jsonEncode({
-      "user_id": userId,
-      "novel_id": novelId,
-    }),
+
+  final response = await http.post(
+    Uri.parse("$baseUrl/wishlist/remove?user_id=$userId&novel_id=$novelId"),
   );
 
   if (response.statusCode != 200) {
@@ -174,17 +179,19 @@ static Future<void> removeFromLibrary(int userId, int novelId) async {
 // }
 
 static Future<List<String>> fetchUserGenres(int userId) async {
+
   final response = await http.get(
     Uri.parse("$baseUrl/user/preferences?user_id=$userId"),
   );
 
   if (response.statusCode == 200) {
+
     final data = jsonDecode(response.body);
+
     return List<String>.from(data["genres"]);
+
   } else {
-    throw Exception(
-      "Failed to fetch user genres (${response.statusCode})",
-    );
+    throw Exception("Failed to load genres");
   }
 }
 

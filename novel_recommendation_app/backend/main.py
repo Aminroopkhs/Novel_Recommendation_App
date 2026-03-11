@@ -12,11 +12,7 @@ from schemas import (
 )
 from auth import create_user, authenticate_user
 
-from recommender.bert_recommender import (
-    generate_novel_embeddings,
-    generate_user_embedding,
-    recommend_novels,
-)
+from recommender.recommend import get_recommendations
 
 # ───────────────── APP SETUP ─────────────────
 app = FastAPI(title="Novel Recommendation Backend")
@@ -91,34 +87,6 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         "user_id": user.id,
         "is_new_user": user.is_new_user,
     }
-
-# ───────────────── GENRES (STATIC FOR NOW) ─────────────────
-@app.get("/genres")
-def get_available_genres():
-    return {
-        "genres": [
-            "Comedy",
-            "Horror",
-            "Sci-Fi",
-            "Romance",
-        ]
-    }
-@app.get("/user/preferences")
-def get_user_preferences(
-    user_id: int,
-    db: Session = Depends(get_db),
-):
-    prefs = (
-        db.query(models.UserPreference.genre)
-        .filter(models.UserPreference.user_id == user_id)
-        .all()
-    )
-
-    return {
-        "genres": [p[0] for p in prefs]
-    }
-
-
 # ───────────────── SAVE USER GENRE PREFERENCES ─────────────────
 @app.post("/user/preferences")
 def save_user_preferences(
@@ -155,6 +123,47 @@ def save_user_preferences(
     db.commit()
 
     return {"message": "Preferences saved successfully"}
+@app.get("/user/preferences")
+def get_user_preferences(
+    user_id: int,
+    db: Session = Depends(get_db),
+):
+    prefs = (
+        db.query(models.UserPreference.genre)
+        .filter(models.UserPreference.user_id == user_id)
+        .all()
+    )
+
+    return {
+        "genres": [p[0] for p in prefs]
+    }
+@app.get("/user/{user_id}")
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email
+    }
+# ───────────────── GENRES (STATIC FOR NOW) ─────────────────
+@app.get("/genres")
+def get_available_genres():
+    return {
+        "genres": [
+            "Comedy",
+            "Horror",
+            "Sci-Fi",
+            "Romance",
+        ]
+    }
+
+
+
+
 
 # ───────────────── GET ALL NOVELS ─────────────────
 @app.get("/novels")
@@ -241,7 +250,8 @@ def get_library(user_id: int, db: Session = Depends(get_db)):
 # Recommender
 @app.get("/recommend/{user_id}")
 def recommend_for_user(user_id: int, db: Session = Depends(get_db)):
-    # 1. Get user genres
+
+    # get user preferred genres
     prefs = (
         db.query(models.UserPreference.genre)
         .filter(models.UserPreference.user_id == user_id)
@@ -253,24 +263,13 @@ def recommend_for_user(user_id: int, db: Session = Depends(get_db)):
     if not user_genres:
         raise HTTPException(status_code=400, detail="User has no preferences")
 
-    # 2. Get all novels
-    novels = db.query(models.Novel).all()
-    if not novels:
-        raise HTTPException(status_code=404, detail="No novels available")
+    # convert list to query text
+    query = " ".join(user_genres)
 
-    # 3. Generate embeddings
-    novel_embeddings = generate_novel_embeddings(novels)
-    user_embedding = generate_user_embedding(user_genres)
-
-    # 4. Recommend
-    recommendations = recommend_novels(
-        novels,
-        novel_embeddings,
-        user_embedding,
-        top_k=5,
-    )
+    # get recommendations
+    recommendations = get_recommendations(query)
 
     return {
         "user_id": user_id,
-        "recommended": recommendations,
+        "recommended": recommendations
     }

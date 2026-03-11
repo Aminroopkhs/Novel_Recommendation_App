@@ -51,5 +51,5 @@ def generate(model_name: str):
 
 
 if __name__ == "__main__":
-    for model in ["bert", "e5", "bge"]:
-        generate(model)
+    # for model in ["bert", "e5", "bge"]:
+    generate("e5")
